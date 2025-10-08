@@ -1,0 +1,27 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00000001043f9b2c, pid=40943, tid=0x0000000000001303
+#
+# JRE version: OpenJDK Runtime Environment (8.0_432-b06) (build 1.8.0_432-b06)
+# Java VM: OpenJDK 64-Bit Server VM (25.432-b06 mixed mode bsd-aarch64 compressed oops)
+# Problematic frame:
+# V  [libjvm.dylib+0x411b2c]  ObjectMonitor::EnterI(Thread*)+0x1b4
+#
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+# If you would like to submit a bug report, please visit:
+#   https://github.com/corretto/corretto-8/issues/
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000000134182000):  JavaThread "DestroyJavaVM" [_thread_blocked, id=4867, stack(0x000000016d048000,0x000000016d24b000)]
+
+siginfo: si_signo: 11 (SIGSEGV), si_code: 2 (SEGV_ACCERR), si_addr: 0x0000000000000000
+
+Registers:
+ x0=0x00000000fffffffd  x1=0x0000000000000000  x2=0x0000000000000101  x3=0x0000000000000101
+ x4=0x0000000000000100  x5=0x0000000000000101  x6=0x0000000000000000  x7=0x00000000000f4240
+ x8=0x0000000000000000  x9=0x0000000000000002 x10=0x0000000000000000 x11=0x0000000000000002
+x12=0x0000010100000100 x13=0x0000000000000000
