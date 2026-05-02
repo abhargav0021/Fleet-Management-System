@@ -1,55 +1,60 @@
 package edu.microserviceslab.usagemicroservice.controller;
 
-import edu.microserviceslab.usagemicroservice.entity.UsageStatistic;
-import edu.microserviceslab.usagemicroservice.service.UsageServiceImpl;
+import edu.microserviceslab.usagemicroservice.dto.EndTripRequest;
+import edu.microserviceslab.usagemicroservice.dto.LocationUpdateRequest;
+import edu.microserviceslab.usagemicroservice.dto.StartTripRequest;
+import edu.microserviceslab.usagemicroservice.entity.LocationUpdate;
+import edu.microserviceslab.usagemicroservice.entity.Trip;
 import edu.microserviceslab.usagemicroservice.service.interfaces.UsageService;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/usage")
 public class UsageController {
 
-    private UsageService usageService;
+    private final UsageService usageService;
 
     public UsageController(UsageService usageService) {
         this.usageService = usageService;
     }
 
-    @ResponseBody
-    @RequestMapping("/list")
-    public List<UsageStatistic> listAllUsageStatistics() {
-        return usageService.getAllUsageStatistics();
+    @PostMapping("/locations")
+    public ResponseEntity<LocationUpdate> ingestLocation(@Valid @RequestBody LocationUpdateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usageService.ingestLocation(request));
     }
 
-    @ResponseBody
-    @RequestMapping("/driver/{driverId}")
-    public List<UsageStatistic> listAllUsageStatisticsForDriver(@PathVariable("driverId") Long driverId) {
-        return usageService.getUsageStatisticsPerDriver(driverId);
+    @GetMapping("/locations/vehicle/{vehicleId}")
+    public List<LocationUpdate> findLocationsByVehicle(
+            @PathVariable Long vehicleId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return usageService.findLocationsByVehicle(vehicleId, from, to);
     }
 
-    @ResponseBody
-    @RequestMapping("/vehicle/{vehicleId}")
-    public List<UsageStatistic> listAllUsageStatisticsForVehicle(@PathVariable("vehicleId") Long vehicleId) {
-        return usageService.getUsageStatisticsPerVehicle(vehicleId);
+    @GetMapping("/trips")
+    public List<Trip> findAllTrips() {
+        return usageService.findAllTrips();
     }
 
-    @ResponseBody
-    @RequestMapping(path="/add", method= RequestMethod.POST)
-    public UsageStatistic addUsageService(@RequestBody UsageStatistic usageStatistic) {
-        if (usageStatistic == null) {
-            throw new IllegalStateException("Please submit a driver to add.");
-        }
-        if (usageStatistic.getSpeed() == null){
-            throw new IllegalStateException("UsageStatistic speed is required");
-        }
-        if (usageStatistic.getRotationsPerMinute() == null){
-            throw new IllegalStateException("UsageStatistic RPM is required");
-        }
-        if (usageStatistic.getFuelLevel() == null){
-            throw new IllegalStateException("UsageStatistic fuel is required");
-        }
-        return UsageServiceImpl.addUsageService(usageStatistic);
+    @PostMapping("/trips/start")
+    public ResponseEntity<Trip> startTrip(@Valid @RequestBody StartTripRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usageService.startTrip(request));
+    }
+
+    @PutMapping("/trips/{id}/end")
+    public Trip endTrip(@PathVariable Long id, @Valid @RequestBody EndTripRequest request) {
+        return usageService.endTrip(id, request);
     }
 }

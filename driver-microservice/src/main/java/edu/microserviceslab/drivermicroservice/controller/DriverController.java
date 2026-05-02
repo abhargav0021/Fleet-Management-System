@@ -1,85 +1,62 @@
 package edu.microserviceslab.drivermicroservice.controller;
 
-import edu.microserviceslab.drivermicroservice.common.proxies.VehicleRestProxy;
-import edu.microserviceslab.drivermicroservice.dto.DriverVehicleChangeRequest;
+import edu.microserviceslab.drivermicroservice.dto.AssignVehicleRequest;
+import edu.microserviceslab.drivermicroservice.dto.CreateDriverRequest;
 import edu.microserviceslab.drivermicroservice.entity.Driver;
 import edu.microserviceslab.drivermicroservice.service.interfaces.DriverService;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/driver")
+@RequestMapping("/drivers")
 public class DriverController {
 
-    private DriverService driverService;
+    private final DriverService driverService;
 
-    private VehicleRestProxy vehicleRestProxy;
-
-    public DriverController(DriverService driverService, VehicleRestProxy vehicleRestProxy) {
+    public DriverController(DriverService driverService) {
         this.driverService = driverService;
-        this.vehicleRestProxy = vehicleRestProxy;
     }
 
-    @ResponseBody
-    @RequestMapping(path = "/add", method = RequestMethod.POST)
-    public Driver addDriver(@RequestBody Driver driver) {
-        if (driver.getPhoneNumber() == null || driver.getPhoneNumber().isEmpty()){
-            throw new IllegalStateException("Driver Phone number is required");
-        }
-        return driverService.addDriver(driver);
+    @PostMapping
+    public ResponseEntity<Driver> create(@Valid @RequestBody CreateDriverRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(driverService.create(request));
     }
 
-    @ResponseBody
-    @RequestMapping(path = "/changeVehicle", method = RequestMethod.POST)
-    public Driver changeVehicle(@RequestBody DriverVehicleChangeRequest changeRequest) {
-        if (changeRequest == null) {
-            throw new IllegalStateException("Please submit a vehicle change request.");
-        }
-        if (changeRequest.getDriverId() == null) {
-            throw new IllegalStateException("The driver's ID number must be present in a vehicle change request.");
-        }
-        if (changeRequest.getVehicleId() == null) {
-            throw new IllegalStateException("The vehicle's ID number must be present in a vehicle change request.");
-        }
-        if (StringUtils.isBlank(vehicleRestProxy.getVehicleLicensePlate(changeRequest.getVehicleId()))) {
-            throw new IllegalStateException("The vehicle does not have a valid registration.");
-        }
-
-        return driverService.changeVehicle(changeRequest);
+    @GetMapping
+    public List<Driver> findAll() {
+        return driverService.findAll();
     }
 
-    @ResponseBody
-    @RequestMapping("/list")
-    public List<Driver> listAllDrivers() {
-        return driverService.getAllDrivers();
+    @GetMapping("/{id}")
+    public Driver findById(@PathVariable Long id) {
+        return driverService.findById(id);
     }
 
-    @ResponseBody
-    @RequestMapping("/{driverId}")
-    public Driver getDriverById(@PathVariable("driverId") Long driverId) {
-        return driverService.getDriverById(driverId);
+    @PutMapping("/{id}")
+    public Driver update(@PathVariable Long id, @Valid @RequestBody CreateDriverRequest request) {
+        return driverService.update(id, request);
     }
 
-    @ResponseBody
-    @RequestMapping("/{driverId}/licensePlate")
-    public String getDriverLicensePlate(@PathVariable("driverId") Long driverId) {
-        Driver driver = driverService.getDriverById(driverId);
-
-        String licensePlate = null;
-        if (driver != null && driver.getVehicleId() != null) {
-            licensePlate = vehicleRestProxy.getVehicleLicensePlate(driver.getVehicleId());
-        }
-
-        return licensePlate;
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        driverService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
-    @ResponseBody
-    @RequestMapping("/{driverId}/vehicleId")
-    public Long getDriverForVehicle(@PathVariable("driverId") Long driverId) {
-        Driver driver = driverService.getDriverById(driverId);
-
-        return driver == null ? null : driver.getVehicleId();
+    @PatchMapping("/{id}/assign-vehicle")
+    public Driver assignVehicle(@PathVariable Long id, @RequestBody AssignVehicleRequest request) {
+        return driverService.assignVehicle(id, request.getVehicleId());
     }
 }

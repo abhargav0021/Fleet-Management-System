@@ -7,16 +7,15 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class DriverRestProxy {
 
-    private UsageConfigProperties usageConfigProperties;
-
+    private final UsageConfigProperties usageConfigProperties;
     private final RestTemplate restTemplate;
 
-    public DriverRestProxy(UsageConfigProperties usageConfigProperties) {
+    public DriverRestProxy(UsageConfigProperties usageConfigProperties, RestTemplate restTemplate) {
         this.usageConfigProperties = usageConfigProperties;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     public String getVehicleForDriver(Long driverId) {
-        return restTemplate.getForObject(usageConfigProperties.getDriverBaseUrl() + "driver/{driverId}/vehicleId", String.class, driverId);
+        return restTemplate.getForObject(usageConfigProperties.getDriverBaseUrl() + "drivers/{driverId}", String.class, driverId);
     }
 }

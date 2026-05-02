@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+.gradle-cache/
+build/
+bin/
+
+# Java build output
+*.class
+
+# Logs and crash dumps
+*.log
+hs_err_pid*.log
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store

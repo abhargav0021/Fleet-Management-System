@@ -1,108 +1,73 @@
 package edu.microserviceslab.vehiclemicroservice.entity;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
-import javax.persistence.*;
-
-@Entity(name = "vehicle")
+@Entity
+@Table(name = "vehicles")
 public class Vehicle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "make")
+    @Column(name = "license_plate", nullable = false, unique = true)
+    private String licensePlate;
+
+    @Column(nullable = false)
+    private String type;
+
+    @Column(nullable = false)
     private String make;
 
-    @Column(name = "model")
+    @Column(nullable = false)
     private String model;
 
-    @Column(name = "model_year")
-    private Integer modelYear;
+    @Column(nullable = false)
+    private Integer year;
 
-    @OneToOne
-    @JoinColumn(name = "registration_id")
-    private Registration registration;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VehicleStatus status;
 
-    public Long getId() {
-        return id;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    public String getMake() {
-        return make;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setMake(String make) {
-        this.make = make;
-    }
+    public String getLicensePlate() { return licensePlate; }
+    public void setLicensePlate(String licensePlate) { this.licensePlate = licensePlate; }
 
-    public String getModel() {
-        return model;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public void setModel(String model) {
-        this.model = model;
-    }
+    public String getMake() { return make; }
+    public void setMake(String make) { this.make = make; }
 
-    public Integer getModelYear() {
-        return modelYear;
-    }
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
 
-    public void setModelYear(Integer modelYear) {
-        this.modelYear = modelYear;
-    }
+    public Integer getYear() { return year; }
+    public void setYear(Integer year) { this.year = year; }
 
-    public Registration getRegistration() {
-        return registration;
-    }
+    public VehicleStatus getStatus() { return status; }
+    public void setStatus(VehicleStatus status) { this.status = status; }
 
-    public void setRegistration(Registration registration) {
-        this.registration = registration;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Vehicle vehicle = (Vehicle) o;
-
-        return new EqualsBuilder()
-                .append(id, vehicle.id)
-                .append(make, vehicle.make)
-                .append(model, vehicle.model)
-                .append(modelYear, vehicle.modelYear)
-                .append(registration, vehicle.registration)
-                .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(id)
-                .append(make)
-                .append(model)
-                .append(modelYear)
-                .append(registration)
-                .toHashCode();
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .append("id", id)
-                .append("make", make)
-                .append("model", model)
-                .append("modelYear", modelYear)
-                .append("registration", registration)
-                .toString();
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

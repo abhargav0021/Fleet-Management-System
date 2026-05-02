@@ -1,0 +1,7 @@
+package edu.microserviceslab.vehiclemicroservice.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}

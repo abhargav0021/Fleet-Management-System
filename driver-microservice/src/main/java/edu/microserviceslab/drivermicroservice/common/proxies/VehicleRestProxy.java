@@ -7,16 +7,15 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class VehicleRestProxy {
 
-    private DriverConfigProperties driverConfigProperties;
-
+    private final DriverConfigProperties driverConfigProperties;
     private final RestTemplate restTemplate;
 
-    public VehicleRestProxy(DriverConfigProperties driverConfigProperties) {
+    public VehicleRestProxy(DriverConfigProperties driverConfigProperties, RestTemplate restTemplate) {
         this.driverConfigProperties = driverConfigProperties;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     public String getVehicleLicensePlate(Long vehicleId) {
-        return restTemplate.getForObject(driverConfigProperties.getVehicleBaseUrl() + "vehicle/licensePlate/{vehicleId}", String.class, vehicleId);
+        return restTemplate.getForObject(driverConfigProperties.getVehicleBaseUrl() + "vehicles/{vehicleId}", String.class, vehicleId);
     }
 }

@@ -1,17 +1,15 @@
 package edu.microserviceslab.drivermicroservice.service.interfaces;
 
-import edu.microserviceslab.drivermicroservice.dto.DriverVehicleChangeRequest;
+import edu.microserviceslab.drivermicroservice.dto.CreateDriverRequest;
 import edu.microserviceslab.drivermicroservice.entity.Driver;
 
 import java.util.List;
 
 public interface DriverService {
-
-    Driver addDriver(Driver driver);
-
-    Driver changeVehicle(DriverVehicleChangeRequest changeRequest);
-
-    List<Driver> getAllDrivers();
-
-    Driver getDriverById(Long driverId);
+    List<Driver> findAll();
+    Driver findById(Long id);
+    Driver create(CreateDriverRequest request);
+    Driver update(Long id, CreateDriverRequest request);
+    void delete(Long id);
+    Driver assignVehicle(Long driverId, Long vehicleId);
 }

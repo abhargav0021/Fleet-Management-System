@@ -1,56 +1,73 @@
 package edu.microserviceslab.drivermicroservice.service;
 
-import edu.microserviceslab.drivermicroservice.dto.DriverVehicleChangeRequest;
+import edu.microserviceslab.drivermicroservice.dto.CreateDriverRequest;
 import edu.microserviceslab.drivermicroservice.entity.Driver;
+import edu.microserviceslab.drivermicroservice.entity.DriverStatus;
+import edu.microserviceslab.drivermicroservice.exception.ResourceNotFoundException;
 import edu.microserviceslab.drivermicroservice.repo.DriverRepo;
 import edu.microserviceslab.drivermicroservice.service.interfaces.DriverService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DriverServiceImpl implements DriverService {
 
-    private DriverRepo driverRepo;
+    private final DriverRepo driverRepo;
 
     public DriverServiceImpl(DriverRepo driverRepo) {
         this.driverRepo = driverRepo;
     }
 
     @Override
-    public Driver addDriver(Driver driver) {
-        return driverRepo.save(driver);
-    }
-
-    @Override
-    public Driver changeVehicle(DriverVehicleChangeRequest changeRequest) {
-        Optional<Driver> driverSearchResult = driverRepo.findById(changeRequest.getDriverId());
-        Driver toReturn = null;
-
-        if (driverSearchResult.isPresent()) {
-            toReturn = driverSearchResult.get();
-            toReturn.setVehicleId(changeRequest.getVehicleId());
-            toReturn = driverRepo.save(toReturn);
-        }
-
-        return toReturn;
-    }
-
-    @Override
-    public List<Driver> getAllDrivers() {
+    public List<Driver> findAll() {
         return driverRepo.findAll();
     }
 
     @Override
-    public Driver getDriverById(Long driverId) {
-        Optional<Driver> driverSearchResult = driverRepo.findById(driverId);
+    public Driver findById(Long id) {
+        return getDriver(id);
+    }
 
-        Driver toReturn = null;
-        if (driverSearchResult.isPresent()) {
-            toReturn = driverSearchResult.get();
-        }
+    @Override
+    public Driver create(CreateDriverRequest request) {
+        Driver driver = new Driver();
+        applyRequest(driver, request);
+        driver.setStatus(request.getStatus() == null ? DriverStatus.AVAILABLE : request.getStatus());
+        return driverRepo.save(driver);
+    }
 
-        return toReturn;
+    @Override
+    public Driver update(Long id, CreateDriverRequest request) {
+        Driver driver = getDriver(id);
+        applyRequest(driver, request);
+        driver.setStatus(request.getStatus() == null ? driver.getStatus() : request.getStatus());
+        return driverRepo.save(driver);
+    }
+
+    @Override
+    public void delete(Long id) {
+        Driver driver = getDriver(id);
+        driverRepo.delete(driver);
+    }
+
+    @Override
+    public Driver assignVehicle(Long driverId, Long vehicleId) {
+        Driver driver = getDriver(driverId);
+        driver.setAssignedVehicleId(vehicleId);
+        return driverRepo.save(driver);
+    }
+
+    private Driver getDriver(Long id) {
+        return driverRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id " + id));
+    }
+
+    private void applyRequest(Driver driver, CreateDriverRequest request) {
+        driver.setFirstName(request.getFirstName());
+        driver.setLastName(request.getLastName());
+        driver.setEmail(request.getEmail());
+        driver.setPhone(request.getPhone());
+        driver.setLicenseNumber(request.getLicenseNumber());
     }
 }
