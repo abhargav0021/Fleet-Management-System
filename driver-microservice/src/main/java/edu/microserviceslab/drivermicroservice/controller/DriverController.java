@@ -2,6 +2,7 @@ package edu.microserviceslab.drivermicroservice.controller;
 
 import edu.microserviceslab.drivermicroservice.dto.AssignVehicleRequest;
 import edu.microserviceslab.drivermicroservice.dto.CreateDriverRequest;
+import edu.microserviceslab.drivermicroservice.dto.UpdateDriverStatusRequest;
 import edu.microserviceslab.drivermicroservice.entity.Driver;
 import edu.microserviceslab.drivermicroservice.service.interfaces.DriverService;
 import jakarta.validation.Valid;
@@ -58,5 +59,10 @@ public class DriverController {
     @PatchMapping("/{id}/assign-vehicle")
     public Driver assignVehicle(@PathVariable Long id, @RequestBody AssignVehicleRequest request) {
         return driverService.assignVehicle(id, request.getVehicleId());
+    }
+
+    @PatchMapping("/{id}/status")
+    public Driver updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateDriverStatusRequest request) {
+        return driverService.updateStatus(id, request.getStatus());
     }
 }

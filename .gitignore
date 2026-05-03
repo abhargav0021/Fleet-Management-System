@@ -11,6 +11,10 @@ bin/
 *.log
 hs_err_pid*.log
 
+# Environment files
+.env
+.env.local
+
 # IDE and OS files
 .idea/
 .vscode/

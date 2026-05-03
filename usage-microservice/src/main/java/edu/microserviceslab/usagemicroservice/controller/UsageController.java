@@ -1,6 +1,7 @@
 package edu.microserviceslab.usagemicroservice.controller;
 
 import edu.microserviceslab.usagemicroservice.dto.EndTripRequest;
+import edu.microserviceslab.usagemicroservice.dto.LocationUpdateMessage;
 import edu.microserviceslab.usagemicroservice.dto.LocationUpdateRequest;
 import edu.microserviceslab.usagemicroservice.dto.StartTripRequest;
 import edu.microserviceslab.usagemicroservice.entity.LocationUpdate;
@@ -31,8 +32,8 @@ public class UsageController {
     }
 
     @PostMapping("/locations")
-    public ResponseEntity<LocationUpdate> ingestLocation(@Valid @RequestBody LocationUpdateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usageService.ingestLocation(request));
+    public ResponseEntity<LocationUpdateMessage> ingestLocation(@Valid @RequestBody LocationUpdateRequest request) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(usageService.ingestLocation(request));
     }
 
     @GetMapping("/locations/vehicle/{vehicleId}")

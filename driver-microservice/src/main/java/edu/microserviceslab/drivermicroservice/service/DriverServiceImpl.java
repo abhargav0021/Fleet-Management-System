@@ -4,6 +4,7 @@ import edu.microserviceslab.drivermicroservice.dto.CreateDriverRequest;
 import edu.microserviceslab.drivermicroservice.entity.Driver;
 import edu.microserviceslab.drivermicroservice.entity.DriverStatus;
 import edu.microserviceslab.drivermicroservice.exception.ResourceNotFoundException;
+import edu.microserviceslab.drivermicroservice.messaging.DriverEventPublisher;
 import edu.microserviceslab.drivermicroservice.repo.DriverRepo;
 import edu.microserviceslab.drivermicroservice.service.interfaces.DriverService;
 import org.springframework.stereotype.Service;
@@ -14,9 +15,11 @@ import java.util.List;
 public class DriverServiceImpl implements DriverService {
 
     private final DriverRepo driverRepo;
+    private final DriverEventPublisher driverEventPublisher;
 
-    public DriverServiceImpl(DriverRepo driverRepo) {
+    public DriverServiceImpl(DriverRepo driverRepo, DriverEventPublisher driverEventPublisher) {
         this.driverRepo = driverRepo;
+        this.driverEventPublisher = driverEventPublisher;
     }
 
     @Override
@@ -40,9 +43,12 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public Driver update(Long id, CreateDriverRequest request) {
         Driver driver = getDriver(id);
+        DriverStatus previousStatus = driver.getStatus();
         applyRequest(driver, request);
         driver.setStatus(request.getStatus() == null ? driver.getStatus() : request.getStatus());
-        return driverRepo.save(driver);
+        Driver saved = driverRepo.save(driver);
+        publishStatusChangedIfNeeded(saved.getId(), previousStatus, saved.getStatus());
+        return saved;
     }
 
     @Override
@@ -58,6 +64,16 @@ public class DriverServiceImpl implements DriverService {
         return driverRepo.save(driver);
     }
 
+    @Override
+    public Driver updateStatus(Long driverId, DriverStatus status) {
+        Driver driver = getDriver(driverId);
+        DriverStatus previousStatus = driver.getStatus();
+        driver.setStatus(status);
+        Driver saved = driverRepo.save(driver);
+        publishStatusChangedIfNeeded(saved.getId(), previousStatus, saved.getStatus());
+        return saved;
+    }
+
     private Driver getDriver(Long id) {
         return driverRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id " + id));
@@ -69,5 +85,11 @@ public class DriverServiceImpl implements DriverService {
         driver.setEmail(request.getEmail());
         driver.setPhone(request.getPhone());
         driver.setLicenseNumber(request.getLicenseNumber());
+    }
+
+    private void publishStatusChangedIfNeeded(Long driverId, DriverStatus previousStatus, DriverStatus newStatus) {
+        if (previousStatus != null && previousStatus != newStatus) {
+            driverEventPublisher.publishStatusChanged(driverId, previousStatus, newStatus);
+        }
     }
 }

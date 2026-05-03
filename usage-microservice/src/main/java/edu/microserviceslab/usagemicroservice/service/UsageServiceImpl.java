@@ -1,6 +1,8 @@
 package edu.microserviceslab.usagemicroservice.service;
 
+import edu.microserviceslab.usagemicroservice.common.config.RabbitMqConfig;
 import edu.microserviceslab.usagemicroservice.dto.EndTripRequest;
+import edu.microserviceslab.usagemicroservice.dto.LocationUpdateMessage;
 import edu.microserviceslab.usagemicroservice.dto.LocationUpdateRequest;
 import edu.microserviceslab.usagemicroservice.dto.StartTripRequest;
 import edu.microserviceslab.usagemicroservice.entity.LocationUpdate;
@@ -10,6 +12,8 @@ import edu.microserviceslab.usagemicroservice.exception.ResourceNotFoundExceptio
 import edu.microserviceslab.usagemicroservice.repo.LocationUpdateRepository;
 import edu.microserviceslab.usagemicroservice.repo.TripRepository;
 import edu.microserviceslab.usagemicroservice.service.interfaces.UsageService;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,24 +24,36 @@ public class UsageServiceImpl implements UsageService {
 
     private final LocationUpdateRepository locationUpdateRepository;
     private final TripRepository tripRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public UsageServiceImpl(LocationUpdateRepository locationUpdateRepository, TripRepository tripRepository) {
+    public UsageServiceImpl(LocationUpdateRepository locationUpdateRepository, TripRepository tripRepository, RabbitTemplate rabbitTemplate) {
         this.locationUpdateRepository = locationUpdateRepository;
         this.tripRepository = tripRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
-    public LocationUpdate ingestLocation(LocationUpdateRequest request) {
+    public LocationUpdateMessage ingestLocation(LocationUpdateRequest request) {
+        LocationUpdateMessage message = toMessage(request);
+        rabbitTemplate.convertAndSend(
+                RabbitMqConfig.FLEET_EXCHANGE,
+                RabbitMqConfig.LOCATION_ROUTING_KEY,
+                message);
+        return message;
+    }
+
+    @Override
+    @RabbitListener(queues = RabbitMqConfig.LOCATION_QUEUE)
+    public void persistLocationUpdate(LocationUpdateMessage message) {
         LocationUpdate locationUpdate = new LocationUpdate();
-        locationUpdate.setVehicleId(request.getVehicleId());
-        locationUpdate.setDriverId(request.getDriverId());
-        locationUpdate.setLatitude(request.getLatitude());
-        locationUpdate.setLongitude(request.getLongitude());
-        locationUpdate.setSpeed(request.getSpeed());
-        locationUpdate.setHeading(request.getHeading());
-        locationUpdate.setTripId(request.getTripId());
-        locationUpdate.setTimestamp(LocalDateTime.now());
-        return locationUpdateRepository.save(locationUpdate);
+        locationUpdate.setVehicleId(message.getVehicleId());
+        locationUpdate.setDriverId(message.getDriverId());
+        locationUpdate.setLatitude(message.getLatitude());
+        locationUpdate.setLongitude(message.getLongitude());
+        locationUpdate.setSpeed(message.getSpeed());
+        locationUpdate.setHeading(message.getHeading());
+        locationUpdate.setTimestamp(message.getTimestamp() == null ? LocalDateTime.now() : message.getTimestamp());
+        locationUpdateRepository.save(locationUpdate);
     }
 
     @Override
@@ -84,5 +100,17 @@ public class UsageServiceImpl implements UsageService {
         trip.setEndTime(LocalDateTime.now());
         trip.setStatus(TripStatus.COMPLETED);
         return tripRepository.save(trip);
+    }
+
+    private LocationUpdateMessage toMessage(LocationUpdateRequest request) {
+        LocationUpdateMessage message = new LocationUpdateMessage();
+        message.setVehicleId(request.getVehicleId());
+        message.setDriverId(request.getDriverId());
+        message.setLatitude(request.getLatitude());
+        message.setLongitude(request.getLongitude());
+        message.setSpeed(request.getSpeed());
+        message.setHeading(request.getHeading());
+        message.setTimestamp(LocalDateTime.now());
+        return message;
     }
 }

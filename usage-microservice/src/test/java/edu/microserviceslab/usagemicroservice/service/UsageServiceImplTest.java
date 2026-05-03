@@ -1,6 +1,8 @@
 package edu.microserviceslab.usagemicroservice.service;
 
+import edu.microserviceslab.usagemicroservice.common.config.RabbitMqConfig;
 import edu.microserviceslab.usagemicroservice.dto.EndTripRequest;
+import edu.microserviceslab.usagemicroservice.dto.LocationUpdateMessage;
 import edu.microserviceslab.usagemicroservice.dto.LocationUpdateRequest;
 import edu.microserviceslab.usagemicroservice.dto.StartTripRequest;
 import edu.microserviceslab.usagemicroservice.entity.LocationUpdate;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,18 +38,32 @@ class UsageServiceImplTest {
     @Mock
     private TripRepository tripRepository;
 
+    @Mock
+    private RabbitTemplate rabbitTemplate;
+
     @InjectMocks
     private UsageServiceImpl usageService;
 
     @Test
-    void ingestLocationCreatesTimestampedLocationUpdate() {
+    void ingestLocationPublishesTimestampedLocationMessage() {
+        LocationUpdateMessage message = usageService.ingestLocation(locationRequest());
+
+        assertThat(message.getVehicleId()).isEqualTo(1L);
+        assertThat(message.getDriverId()).isEqualTo(2L);
+        assertThat(message.getTimestamp()).isNotNull();
+        verify(rabbitTemplate).convertAndSend(
+                eq(RabbitMqConfig.FLEET_EXCHANGE),
+                eq(RabbitMqConfig.LOCATION_ROUTING_KEY),
+                any(LocationUpdateMessage.class));
+    }
+
+    @Test
+    void persistLocationUpdateSavesMessageToDatabase() {
         when(locationUpdateRepository.save(any(LocationUpdate.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        LocationUpdate saved = usageService.ingestLocation(locationRequest());
+        usageService.persistLocationUpdate(locationMessage());
 
-        assertThat(saved.getVehicleId()).isEqualTo(1L);
-        assertThat(saved.getDriverId()).isEqualTo(2L);
-        assertThat(saved.getTimestamp()).isNotNull();
+        verify(locationUpdateRepository).save(any(LocationUpdate.class));
     }
 
     @Test
@@ -111,6 +129,18 @@ class UsageServiceImplTest {
         request.setHeading(180.0);
         request.setTripId(3L);
         return request;
+    }
+
+    private LocationUpdateMessage locationMessage() {
+        LocationUpdateMessage message = new LocationUpdateMessage();
+        message.setVehicleId(1L);
+        message.setDriverId(2L);
+        message.setLatitude(41.0);
+        message.setLongitude(-87.0);
+        message.setSpeed(35.5);
+        message.setHeading(180.0);
+        message.setTimestamp(LocalDateTime.of(2026, 5, 2, 12, 0));
+        return message;
     }
 
     private StartTripRequest startTripRequest() {
